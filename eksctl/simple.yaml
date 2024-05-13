@@ -1,0 +1,46 @@
+# extended-cluster-vpc.yaml
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: simple
+  region: us-east-1
+
+iam:
+  withOIDC: true
+
+nodeGroups:
+  # Nodegroup will be created on the specified Outpost.
+  - name: self-manage-ng
+    privateNetworking: true
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 4
+    volumeSize: 20
+    volumeType: gp2
+
+
+managedNodeGroups:
+  - name: managed-ng
+    instanceType: t3.medium
+    minSize: 2
+    desiredCapacity: 3
+    maxSize: 4
+    volumeSize: 20
+    updateConfig:
+      maxUnavailable: 3 # or `maxUnavailablePercentage: 75` to specify maxUnavailable as a percentage of total nodes
+    labels: {role: worker}
+    # Note: unmanaged nodegroups (`nodeGroups` field) use a different structure (map[string]string) to express taints
+    taints:
+    - key: tier
+      value: silver
+      effect: NoSchedule
+    tags:
+      nodegroup-role: worker
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]
+    logRetentionInDays: 7
